@@ -1,8 +1,8 @@
 package main
 
 import (
+	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,11 +13,17 @@ func uploadHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "you must upload one file"})
 		return
 	}
+	baseDir := "/home/0x3ea/Kist/data"
 
-	filename := file.Filename
-	filepath := filepath.Join("/home/0x3ea/Kist/data", filename)
+	uploadPath, err := secureJoin(baseDir, file.Filename)
 
-	if err := c.SaveUploadedFile(file, filepath); err != nil {
+	if err != nil {
+		log.Printf("illegal uploadPath, input: %s,error: %v", file.Filename, err)
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access Denied"})
+		return
+	}
+
+	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}
@@ -26,7 +32,7 @@ func uploadHandler(c *gin.Context) {
 		UUID:     generateUUID(),
 		UID:      generateUID(),
 		Filename: file.Filename,
-		Filepath: filepath,
+		Filepath: uploadPath,
 		Filesize: file.Size,
 	}
 

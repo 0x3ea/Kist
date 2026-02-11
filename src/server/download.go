@@ -1,14 +1,13 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
-	"path"
 
 	"github.com/gin-gonic/gin"
 )
 
-// TODO: add guard for http://localhost:8080/download?filename=../../../../../etc/passwd
 func downloadHandler(c *gin.Context) {
 	filename := c.Query("filename")
 
@@ -18,14 +17,19 @@ func downloadHandler(c *gin.Context) {
 	}
 
 	baseDir := "/home/0x3ea/Kist/data"
-	filepath := path.Join(baseDir, filename)
 
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+	downloadPath, err := secureJoin(baseDir, filename)
+
+	if err != nil {
+		log.Printf("illegal uploadPath, input: %s,error: %v", filename, err)
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access Denied"})
+		return
+	}
+
+	if _, err := os.Stat(downloadPath); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "file not exit"})
 		return
 	}
 
-	// c.File(filepath)
-
-	c.FileAttachment(filepath, filename)
+	c.FileAttachment(downloadPath, filename)
 }

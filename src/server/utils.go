@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -28,4 +29,21 @@ func generateUUID() string {
 	return u
 }
 
+func secureJoin(baseDir, targetPath string) (string, error) {
+	absPath := filepath.Join(baseDir, targetPath)
 
+	absBaseDir, err := filepath.Abs(baseDir)
+
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(absPath, absBaseDir) {
+		return "", fmt.Errorf("illegal path: %s", targetPath)
+	}
+
+	if len(absPath) > len(absBaseDir) && absPath[len(absBaseDir)] != filepath.Separator {
+		return "", fmt.Errorf("illegal path: %s", targetPath)
+	}
+	return absPath, nil
+}
